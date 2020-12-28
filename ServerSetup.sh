@@ -8,7 +8,7 @@ fi
 ### Functions ###
 
 debian_initialize() {
-	echo "Updating and Installing Dependicies"
+	echo "Updating and Installing Dependencies"
 	apt-get -qq update > /dev/null 2>&1
 	apt-get -qq -y upgrade > /dev/null 2>&1
 	apt-get install -qq -y nmap > /dev/null 2>&1
@@ -213,8 +213,8 @@ install_postfix_dovecot() {
 	biff = no
 	append_dot_mydomain = no
 	readme_directory = no
-	smtpd_tls_cert_file=/etc/letsencrypt/live/${primary_domain}/fullchain.pem
-	smtpd_tls_key_file=/etc/letsencrypt/live/${primary_domain}/privkey.pem
+	smtpd_tls_cert_file = /etc/letsencrypt/live/${primary_domain}/fullchain.pem
+	smtpd_tls_key_file = /etc/letsencrypt/live/${primary_domain}/privkey.pem
 	smtpd_tls_security_level = may
 	smtp_tls_security_level = encrypt
 	smtpd_tls_session_cache_database = btree:\${data_directory}/smtpd_scache
@@ -236,6 +236,16 @@ install_postfix_dovecot() {
 	milter_protocol = 6
 	smtpd_milters = inet:12301,inet:localhost:54321
 	non_smtpd_milters = inet:12301,inet:localhost:54321
+	mime_header_checks = regexp:/etc/postfix/header_checks
+	header_checks = regexp:/etc/postfix/header_checks
+	EOF
+
+	# https://major.io/2013/04/14/remove-sensitive-information-from-email-headers-with-postfix/
+	cat <<-EOF > /etc/postfix/header_checks
+	/^Received:.*with ESMTPSA/              IGNORE
+	/^X-Originating-IP:/    IGNORE
+	/^X-Mailer:/            IGNORE
+	/^Mime-Version:/        IGNORE
 	EOF
 
 	cat <<-EOF >> /etc/postfix/master.cf
@@ -286,12 +296,13 @@ install_postfix_dovecot() {
 	opendkim-genkey -s mail -d "${primary_domain}"
 	echo 'SOCKET="inet:12301"' >> /etc/default/opendkim
 	chown -R opendkim:opendkim /etc/opendkim
+	chown -R opendmarc:opendmarc /var/run/opendmarc/
 
 	echo "Configuring opendmarc"
 
 	cat <<-EOF > /etc/opendmarc.conf
 	AuthservID ${primary_domain}
-	PidFile /var/run/opendmarc.pid
+	PidFile /var/run/opendmarc/opendmarc.pid
 	RejectFailures false
 	Syslog true
 	TrustedAuthservIDs ${primary_domain}
@@ -385,7 +396,7 @@ function add_alias(){
 }
 
 function get_dns_entries(){
-	extip=$(ifconfig|grep 'Link encap\|inet '|awk '!/Loopback|:127./'|tr -s ' '|grep 'inet'|tr ':' ' '|cut -d" " -f4)
+	extip=$(ifconfig|grep 'Link encap\|inet '|awk '!/Loopback|:127./'|tr -s ' '|grep 'inet'|tr ':' ' '|cut -d" " -f3)
 	domain=$(ls /etc/opendkim/keys/ | head -1)
 	fields=$(echo "${domain}" | tr '.' '\n' | wc -l)
 	dkimrecord=$(cut -d '"' -f 2 "/etc/opendkim/keys/${domain}/mail.txt" | tr -d "[:space:]")
@@ -525,9 +536,9 @@ setupSSH(){
 
 function Install_GoPhish {
 	apt-get install unzip > /dev/null 2>&1
-	wget https://github.com/gophish/gophish/releases/download/v0.4.0/gophish-v0.4-linux-64bit.zip
-	unzip gophish-v0.4-linux-64bit.zip
-	cd gophish-v0.4-linux-64bit
+	wget https://github.com/gophish/gophish/releases/download/v0.11.0/gophish-v0.11-linux-64bit.zip
+	unzip gophish-v0.11-linux-64bit.zip
+	cd gophish-v0.11-linux-64bit
         sed -i 's/"listen_url" : "127.0.0.1:3333"/"listen_url" : "0.0.0.0:3333"/g' config.json
 	read -r -p "Do you want to add an SSL certificate to your GoPhish? [y/N] " response
 	case "$response" in
@@ -557,9 +568,9 @@ function Install_GoPhish {
 
 function Install_IRedMail {
 	echo "Downloading iRedMail"
-	wget https://bitbucket.org/zhb/iredmail/downloads/iRedMail-0.9.6.tar.bz2
-	tar -xvf iRedMail-0.9.6.tar.bz2
-	cd iRedMail-0.9.6/
+	wget https://github.com/iredmail/iRedMail/releases/download/1.3.1/iRedMail-1.3.1.tar.gz
+	tar -xvf iRedMail-1.3.1.tar.gz
+	cd iRedMail-1.3.1/
 	chmod +x iRedMail.sh
 	echo "Running iRedMail Installer"
 	./iRedMail.sh
