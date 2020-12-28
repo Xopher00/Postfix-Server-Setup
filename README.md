@@ -1,3 +1,9 @@
+# Credit
+I've used this tool A LOT, but it wasn't updated in the last 3 years, so i've decided to maintain a fork myself.
+All the original work was done by @nope-sled here: https://github.com/n0pe-sled/Postfix-Server-Setup
+
+---------------------------------------------------
+
 Setting up a phishing server is a very long and tedious process. It can take hours to setup, and can be compromised in minutes. The esteemed gentlemen [@cptjesus](https://twitter.com/cptjesus) and [@Killswitch_GUI](https://twitter.com/Killswitch_GUI) have already made leaps and bounds in this arena. I took everything that I learned from them on setting up a server, and applied it to a bash script to automate the process. Before we get to the script, let’s go over the basics to setting up a mail server.
 
 First, let’s outline the process, then dive deeper into each step:
