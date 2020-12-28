@@ -1,6 +1,6 @@
 # Credit
 I've used this tool A LOT, but it wasn't updated in the last 3 years, so i've decided to maintain a fork myself.
-All the original work was done by @nope-sled here: https://github.com/n0pe-sled/Postfix-Server-Setup
+All the original work was done by [@nope-sled](https://github.com/n0pe-sled) [here](https://github.com/n0pe-sled/Postfix-Server-Setup)
 
 ---------------------------------------------------
 
