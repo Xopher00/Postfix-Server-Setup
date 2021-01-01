@@ -13,6 +13,8 @@ debian_initialize() {
 	apt-get -qq -y upgrade > /dev/null 2>&1
 	apt-get install -qq -y nmap > /dev/null 2>&1
 	apt-get install -qq -y git > /dev/null 2>&1
+	apt-get install -qq -y snapd > /dev/null 2>&1
+	snap install core > /dev/null 2>&1
 	apt-get remove -qq -y exim4 exim4-base exim4-config exim4-daemon-light > /dev/null 2>&1
 	rm -r /var/log/exim4/ > /dev/null 2>&1
 
@@ -167,8 +169,9 @@ add_firewall_port(){
 
 
 install_ssl_Cert() {
-	git clone https://github.com/certbot/certbot.git /opt/letsencrypt > /dev/null 2>&1
-
+	#git clone https://github.com/certbot/certbot.git /opt/letsencrypt > /dev/null 2>&1
+	snap install --classic certbot
+	ln -s /snap/bin/certbot /usr/bin/certbot
 	cd /opt/letsencrypt
 	letsencryptdomains=()
 	end="false"
