@@ -545,6 +545,7 @@ function Install_GoPhish {
 	unzip gophish-${GOPHISH_VER}-linux-64bit.zip -d gophish-${GOPHISH_VER}-linux-64bit
 	cd gophish-v0.11.0-linux-64bit
         sed -i 's/127.0.0.1:3333/"0.0.0.0:3333/g' config.json
+		chmod +x gophish
 	read -r -p "Do you want to add an SSL certificate to your GoPhish? [y/N] " response
 	case "$response" in
 	[yY][eE][sS]|[yY])
