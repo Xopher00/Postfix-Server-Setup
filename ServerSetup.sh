@@ -174,7 +174,7 @@ install_ssl_Cert() {
 	snap install core > /dev/null 2>&1
 	snap install --classic certbot
 	ln -s /snap/bin/certbot /usr/bin/certbot
-	cd /opt/letsencrypt
+#	cd /opt/letsencrypt
 	letsencryptdomains=()
 	end="false"
 	i=0
