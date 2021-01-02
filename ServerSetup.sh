@@ -299,6 +299,7 @@ install_postfix_dovecot() {
 
 	cd "/etc/opendkim/keys/${primary_domain}" || exit
 	opendkim-genkey -s mail -d "${primary_domain}"
+	cd ~
 	echo 'SOCKET="inet:12301"' >> /etc/default/opendkim
 	chown -R opendkim:opendkim /etc/opendkim
 	chown -R opendmarc:opendmarc /var/run/opendmarc/
