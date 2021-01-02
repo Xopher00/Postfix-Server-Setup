@@ -299,7 +299,6 @@ install_postfix_dovecot() {
 
 	cd "/etc/opendkim/keys/${primary_domain}" || exit
 	opendkim-genkey -s mail -d "${primary_domain}"
-	cd ~
 	echo 'SOCKET="inet:12301"' >> /etc/default/opendkim
 	chown -R opendkim:opendkim /etc/opendkim
 	chown -R opendmarc:opendmarc /var/run/opendmarc/
@@ -543,6 +542,7 @@ setupSSH(){
 function Install_GoPhish {
 	export GOPHISH_VER="v0.11.0"
 	apt-get install unzip > /dev/null 2>&1
+	cd 
 	wget https://github.com/gophish/gophish/releases/download/${GOPHISH_VER}/gophish-${GOPHISH_VER}-linux-64bit.zip
 	mkdir gophish-${GOPHISH_VER}-linux-64bit
 	unzip gophish-${GOPHISH_VER}-linux-64bit.zip -d gophish-${GOPHISH_VER}-linux-64bit
