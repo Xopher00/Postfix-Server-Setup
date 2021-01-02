@@ -561,7 +561,7 @@ function Install_GoPhish {
         	 	sed -i "s/0.0.0.0:80/0.0.0.0:443/g" config.json
         	 	sed -i "s/gophish_admin.crt/${primary_domain}.crt/g" config.json
         	 	sed -i "s/gophish_admin.key/${primary_domain}.key/g" config.json
-			sed -i 's/"use_tls" : false/"use_tls" : true/g' config.json
+			sed -i 's/false/true/g' config.json
         	 	sed -i "s/example.crt/${primary_domain}.crt/g" config.json
         	 	sed -i "s/example.key/${primary_domain}.key/g" config.json
 		 else
