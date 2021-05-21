@@ -544,7 +544,7 @@ setupSSH(){
 	# runuser -l $user_name -c "chmod 700 ~/.ssh"
 	
 	rsync --archive --chown=$user_name:$user_name ~/.ssh /home/$user_name
-	mv /root/.ssh/authorized_keys /root/ssh/authorized_keys.back
+	mv /root/.ssh/authorized_keys /root/.ssh/authorized_keys.back
 
 	service ssh restart
 
