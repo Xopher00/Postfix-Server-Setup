@@ -12,6 +12,7 @@ debian_initialize() {
 	apt-get -qq update > /dev/null 2>&1
 	apt-get -qq -y upgrade > /dev/null 2>&1
 	apt-get install -qq -y nmap > /dev/null 2>&1
+	apt-get install -qq -y net-tools > /dev/null 2>&1
 	apt-get install -qq -y git > /dev/null 2>&1
 	apt-get install -qq -y snapd > /dev/null 2>&1
 	snap install core > /dev/null 2>&1
@@ -79,15 +80,19 @@ ubuntu_initialize() {
 
 	echo "Changing Hostname"
 
-	read -p "Enter your hostname: " -r primary_domain
-
+	# read -p "Enter your hostname: " -r primary_domain
+	# read in fully qualified domain name (fqdn) set it as the hostname - preferably mail.domain.tld
+	read -p "Enter your FQDN to use as the hostname: " -r fully_domain
+	
+	# 127.0.1.1 $primary_domain $primary_domain
 	cat <<-EOF > /etc/hosts
-	127.0.1.1 $primary_domain $primary_domain
+	127.0.1.1 $fully_domain $fully_domain
 	127.0.0.1 localhost
 	EOF
 
+	# $primary_domain
 	cat <<-EOF > /etc/hostname
-	$primary_domain
+	$fully_domain
 	EOF
 
 	echo "The System will now reboot!"
@@ -181,7 +186,7 @@ install_ssl_Cert() {
 	
 	while [ "$end" != "true" ]
 	do
-		read -p "Enter your server's domain or done to exit: " -r domain
+		read -p "Enter your server's FQDN or done to exit: " -r domain
 		if [ "$domain" != "done" ]
 		then
 			letsencryptdomains[$i]=$domain
@@ -209,7 +214,7 @@ install_postfix_dovecot() {
 	apt-get install -qq -y opendmarc
 	apt-get install -qq -y mailutils
 
-	read -p "Enter your mail server's domain: " -r primary_domain
+	read -p "Enter your mail server's domain (not fqdn): " -r primary_domain
 	read -p "Enter IP's to allow Relay (if none just hit enter): " -r relay_ip
 	echo "Configuring Postfix"
 
@@ -218,18 +223,18 @@ install_postfix_dovecot() {
 	biff = no
 	append_dot_mydomain = no
 	readme_directory = no
-	smtpd_tls_cert_file = /etc/letsencrypt/live/${primary_domain}/fullchain.pem
-	smtpd_tls_key_file = /etc/letsencrypt/live/${primary_domain}/privkey.pem
+	smtpd_tls_cert_file = /etc/letsencrypt/live/mail.${primary_domain}/fullchain.pem
+	smtpd_tls_key_file = /etc/letsencrypt/live/mail.${primary_domain}/privkey.pem
 	smtpd_tls_security_level = may
 	smtp_tls_security_level = encrypt
 	smtpd_tls_session_cache_database = btree:\${data_directory}/smtpd_scache
 	smtp_tls_session_cache_database = btree:\${data_directory}/smtp_scache
 	smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
-	myhostname = ${primary_domain}
+	myhostname = mail.${primary_domain}
 	alias_maps = hash:/etc/aliases
 	alias_database = hash:/etc/aliases
 	myorigin = /etc/mailname
-	mydestination = ${primary_domain}, localhost.com, , localhost
+	mydestination = ${primary_domain}, mail.${primary_domain}, localhost.com, , localhost
 	relayhost =
 	mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 ${relay_ip}
 	mailbox_command = procmail -a "\$EXTENSION"
@@ -294,6 +299,7 @@ install_postfix_dovecot() {
 	127.0.0.1
 	localhost
 	${primary_domain}
+	mail.${primary_domain}
 	${relay_ip}
 	EOF
 
@@ -317,6 +323,8 @@ install_postfix_dovecot() {
 	IgnoreHosts /etc/opendmarc/ignore.hosts
 	HistoryFile /var/run/opendmarc/opendmarc.dat
 	EOF
+	
+	echo "debug opendmarc db 1"
 
 	mkdir "/etc/opendmarc/"
 	echo "localhost" > /etc/opendmarc/ignore.hosts
@@ -371,8 +379,8 @@ install_postfix_dovecot() {
 	}
 
 	ssl=required
-	ssl_cert = </etc/letsencrypt/live/${primary_domain}/fullchain.pem
-	ssl_key = </etc/letsencrypt/live/${primary_domain}/privkey.pem
+	ssl_cert = </etc/letsencrypt/live/mail.${primary_domain}/fullchain.pem
+	ssl_key = </etc/letsencrypt/live/mail.${primary_domain}/privkey.pem
 	EOF
 
 	read -p "What user would you like to assign to recieve email for Root: " -r user_name
@@ -382,13 +390,13 @@ install_postfix_dovecot() {
 	echo "Restarting Services"
 	service postfix restart
 	service opendkim restart
-	service opendmarc restart
+	# service opendmarc restart
 	service dovecot restart
 
 	echo "Checking Service Status"
 	service postfix status
 	service opendkim status
-	service opendmarc status
+	# service opendmarc status
 	service dovecot status
 }
 
@@ -414,13 +422,13 @@ function get_dns_entries(){
 		Namecheap - Enter under Advanced DNS
 
 		Record Type: A
-		Host: @
+		Host: mail
 		Value: ${extip}
 		TTL: 5 min
 
 		Record Type: TXT
 		Host: @
-		Value: v=spf1 ip4:${extip} -all
+		Value: v=spf1 mx ~all
 		TTL: 5 min
 
 		Record Type: TXT
@@ -436,7 +444,7 @@ function get_dns_entries(){
 		Change Mail Settings to Custom MX and Add New Record
 		Record Type: MX
 		Host: @
-		Value: ${domain}
+		Value: mail.${domain}
 		Priority: 10
 		TTL: 5 min
 		EOF
@@ -456,7 +464,7 @@ function get_dns_entries(){
 
 		Record Type: TXT
 		Host: ${prefix}
-		Value: v=spf1 ip4:${extip} -all
+		Value: v=spf1 mx ~all
 		TTL: 5 min
 
 		Record Type: TXT
@@ -529,11 +537,14 @@ setupSSH(){
 
 	echo "AllowUsers ${user_name}" > /etc/ssh/sshd_config
 
-	cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+	# cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 
-	cd /home/$user_name
-	runuser -l $user_name -c "mkdir '.ssh'"
-	runuser -l $user_name -c "chmod 700 ~/.ssh"
+	# cd /home/$user_name
+	# runuser -l $user_name -c "mkdir '.ssh'"
+	# runuser -l $user_name -c "chmod 700 ~/.ssh"
+	
+	rsync --archive --chown=$user_name:$user_name ~/.ssh /home/$user_name
+	mv /root/.ssh/authorized_keys /root/ssh/authorized_keys.back
 
 	service ssh restart
 
@@ -552,7 +563,7 @@ function Install_GoPhish {
 	read -r -p "Do you want to add an SSL certificate to your GoPhish? [y/N] " response
 	case "$response" in
 	[yY][eE][sS]|[yY])
-        	 read -p "Enter your web server's domain: " -r primary_domain
+        	 read -p "Enter your web server's fqdn: " -r primary_domain
 		 if [ -f "/etc/letsencrypt/live/${primary_domain}/fullchain.pem" ];then
 		 	ssl_cert="/etc/letsencrypt/live/${primary_domain}/fullchain.pem"
        		 	ssl_key="/etc/letsencrypt/live/${primary_domain}/privkey.pem"
