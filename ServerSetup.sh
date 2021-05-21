@@ -58,6 +58,7 @@ ubuntu_initialize() {
 	apt-get -qq update > /dev/null 2>&1
 	apt-get -qq -y upgrade > /dev/null 2>&1
 	apt-get install -qq -y nmap > /dev/null 2>&1
+	apt-get install -qq -y net-tools > /dev/null 2>&1
 	apt-get install -qq -y git > /dev/null 2>&1
 	rm -r /var/log/exim4/ > /dev/null 2>&1
 
